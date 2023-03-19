@@ -54,6 +54,34 @@ vi solve1 (int n, int m, string s, string t) {
     return ans;
 }
 
+
+int add(int a, int b) {
+    return (a+b)%MOD;
+}
+
+int mul(int a, int b) {
+    ll ans = (ll) a*b;
+    return ans%MOD;
+}
+
+int sub(int a, int b) {
+    return (a + MOD - b)%MOD;
+}
+
+int expo_mod (int a, int b){
+    int c = 0;
+    int d = 1;
+    for (int i = 31; i >= 0; i--) {
+        c = 2*c;
+        d = mul(d, d);
+        if ((b >> i)&1) {
+            c += 1;
+            d = mul(d, a);
+        }
+    }
+    return d;
+}
+
 vi solve2 (int n, int m, string s, string t) {
     // Sol 2: Rabin-Karp
     // time compelxity: O(m) preprocessing time + O((n-m+1)*m) worst case
@@ -63,8 +91,43 @@ vi solve2 (int n, int m, string s, string t) {
     // if v == v'; -> ok
     // however we can compute hash(s[start+1:start+m+1]) (hash_s+1) from s[start:start+m] (hash_s) in just O(1)
     // hash_s+1 = 26*(hash_s - s[start] * 26^(m-1)) + s[start+m+1]
-    
+    // but whenever the hash values are equal together -> we must compare two strings again in O(m)
+    // but this rarelly happen. so O(m) prepocess and O(n) in searching and confirming
+    vi ans;
+    int hash_t = 0;
+    int hash_s_window_m = 0;
+    for (int i = 0; i < m; i++) {
+        hash_t = add(mul(expo_mod(26, i), hash_t), (t[i] - 'a'));
+        hash_s_window_m = add(mul(expo_mod(26, i), hash_s_window_m), (s[i] - 'a'));
+    }
+    // cout << hash_t << " " << hash_s_window_m << endl;
+    for (int i = 0; i + m - 1 < n; i++) {
+        // cout << hash_s_window_m << endl;
+        if (hash_s_window_m == hash_t) {
+            // check if match or not
+            for (int j = 0; j < m; j++) {
+                if (s[i+j] == t[j]) {
+                    if (j == m-1) {
+                        ans.push_back(i);
+                    }
+                    continue;
+                } else {
+                    break;
+                }
+            }
+        } else {
+            //  if not match then calculate the next window size m
+            if (i+m < n) {
+                int tmp = mul(expo_mod(26, m-1), (s[i] - 'a'));
+                hash_s_window_m = add(mul(26, sub(hash_s_window_m, tmp)), s[i+m] - 'a'); // minus the first value
+            }
+        }
+    }
+    return ans;
+}
 
+void solve3 (int n, int m, string s, string t) {
+    
 }
 
 void solve(){
@@ -73,7 +136,7 @@ void solve(){
     cin >> s >> t;
     int n = s.size();
     int m = t.size();
-    vi ans = solve1(n, m, s, t);
+    vi ans = solve2(n, m, s, t);
     for (int i : ans) {
         cout << i << " ";
     }
@@ -83,8 +146,8 @@ void solve(){
 int main(){
     ios::sync_with_stdio(false);
     cin.tie(0);
-    int c;
-    cin >> c;
+    int c = 1;
+    // cin >> c;
     while(c--){
         solve();
     }

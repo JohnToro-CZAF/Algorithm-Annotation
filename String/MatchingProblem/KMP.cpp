@@ -92,7 +92,10 @@ vi solve2 (int n, int m, string s, string t) {
     // however we can compute hash(s[start+1:start+m+1]) (hash_s+1) from s[start:start+m] (hash_s) in just O(1)
     // hash_s+1 = 26*(hash_s - s[start] * 26^(m-1)) + s[start+m+1]
     // but whenever the hash values are equal together -> we must compare two strings again in O(m)
-    // but this rarelly happen. so O(m) prepocess and O(n) in searching and confirming
+    // but this rarelly happen. so O(m) prepocess.
+    // and O(n-m+1 + cm): c is means the number of times we have to recheck. In reality, c approachs constant
+    // So O(n) in searching and confirming
+    // Overall time complexity is O(m + n)
     vi ans;
     int hash_t = 0;
     int hash_s_window_m = 0;
@@ -126,8 +129,49 @@ vi solve2 (int n, int m, string s, string t) {
     return ans;
 }
 
-void solve3 (int n, int m, string s, string t) {
-    
+// String matching with finite automata
+vi solve3 (int n, int m, string s, string t) {
+    // precompute the transistion[i][char] which is defined within string t first. Is to find the longest
+    // prefix of t such that it is suffix of (t[0:i] + char). (this prefix can not be longger t[0:i])
+    auto check = [&] (string prefix, string target) {
+        int n1 = prefix.size();
+        int m1 = target.size();
+        // check if this string prefix is the suffix of target or not?
+        for (int i = n1-1; i >= 0; i--) {
+            if (prefix[i] != target[m1 - n1 + i]) {
+                return false;
+            }
+        }
+        return true;
+    };
+    vector<vector<int>> trans(m, vi(26, 0));
+    for (int i = 0; i < m; i++) {
+        for (int j = 0; j < 26; j++) {
+            int k = i+1; // traverse k backward to find the prefix that match with suffix (including itself)
+            while (k >= 0 && !check(t.substr(0, k), t.substr(0, i) + char(j + 'a'))) {
+                k--;
+            }
+            if (k >= 0) {
+                trans[i][j] = k;
+            }
+        }
+    }
+    for (int i = 0; i < m; i++) {
+        for (int j = 0; j < 26; j++) {
+            cout << trans[i][j] << " ";
+        }
+        cout << endl;
+    }
+    vi ans;
+    int q = 0; // current maximum matched prefix
+    for (int i = 0; i < n; i++) {
+        q = trans[q][s[i] - 'a'];
+        if (q == m) {
+            ans.push_back(i-m+1);
+            q = 0;
+        }
+    }
+    return ans;
 }
 
 void solve(){
@@ -136,7 +180,7 @@ void solve(){
     cin >> s >> t;
     int n = s.size();
     int m = t.size();
-    vi ans = solve2(n, m, s, t);
+    vi ans = solve3(n, m, s, t);
     for (int i : ans) {
         cout << i << " ";
     }
